@@ -56,15 +56,17 @@ class TimeData(Dataset):
                 return len(self.data)-self.seq_len-self.pred_len
         
         def __getitem__(self, idx):
+                if idx + self.seq_len + self.pred_len > len(self.data):
+                    raise IndexError('index out of bounds')
                 total = self.data[idx:idx+self.seq_len+self.pred_len]
                 age_tensor = torch.arange(self.seq_len+self.pred_len).float().unsqueeze(1)/(self.pred_len+self.seq_len-1)
                 age_tensor = age_tensor - age_tensor[self.seq_len-1]
                 total = torch.cat((total, age_tensor), dim = 1)
                 
-                X = total[idx:idx+self.seq_len]
+                X = total[:self.seq_len]
                 seq_X = X[:,:-6]
                 time_X = X[:, -6:]
-                Y = total[idx + self.seq_len - self.label_len:idx + self.seq_len + self.pred_len]
+                Y = total[self.seq_len - self.label_len:self.seq_len + self.pred_len]
                 seq_y = Y[:, 3].unsqueeze(-1)
                 time_y = Y[:,-6:]
                 return seq_X, time_X, seq_y, time_y
